@@ -6,7 +6,7 @@ local M = {}
 M.convert_command_args = function(opts)
   local args = opts.fargs
   if #args == 0 then
-    vim.api.nvim_err_writeln("No arguments provided. Expected at least one argument.")
+    vim.notify("No arguments provided. Expected at least one argument.", vim.log.levels.ERROR)
     return nil, {}
   end
 
@@ -74,7 +74,7 @@ M.convert_opts = function(default_opts, opts)
 
       if new_val == nil then
         local msg = string.format("Invalid value for key '%s'. Expected type '%s'.", key, expected_type)
-        vim.api.nvim_err_writeln(msg)
+        vim.notify(msg, vim.log.levels.ERROR)
         return false
       end
 
@@ -93,7 +93,7 @@ M.get_neogurt_channel = function()
     end
   end
 
-  vim.api.nvim_err_writeln("Cannot find neogurt client")
+  vim.notify("Cannot find neogurt client", vim.log.levels.ERROR)
   return nil
 end
 
@@ -108,13 +108,13 @@ M.merge_opts = function(default_opts, opts)
 
     if val == nil then
       local msg = string.format("Positional argument #%d with type '%s' is required.", index, expected_type)
-      vim.api.nvim_err_writeln(msg)
+      vim.notify(msg, vim.log.levels.ERROR)
       return nil
     end
 
     if type(val) ~= expected_type then
       local msg = string.format("Invalid value for positional argument #%d. Expected type '%s'.", index, expected_type)
-      vim.api.nvim_err_writeln(msg)
+      vim.notify(msg, vim.log.levels.ERROR)
       return nil
     end
 
@@ -135,7 +135,7 @@ M.merge_opts = function(default_opts, opts)
     if vim.tbl_contains(all_types, default_val) then
       if val == nil then
         local msg = string.format("Key '%s' with type '%s' is required", key, default_val)
-        vim.api.nvim_err_writeln(msg)
+        vim.notify(msg, vim.log.levels.ERROR)
         return nil
       end
       expected_type = default_val
@@ -146,7 +146,7 @@ M.merge_opts = function(default_opts, opts)
     if val ~= nil then
       if type(opts[key]) ~= expected_type then
         local msg = string.format("Invalid value for key '%s'. Expected type '%s'.", key, expected_type)
-        vim.api.nvim_err_writeln(msg)
+        vim.notify(msg, vim.log.levels.ERROR)
         return nil
       end
       new_opts[key] = val

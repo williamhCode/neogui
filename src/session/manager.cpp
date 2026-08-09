@@ -274,25 +274,22 @@ int SessionManager::SessionRestart(int id, const std::string& cmd, bool currDir)
     session->nvim.client->TryDisconnect();
 
   } else {
-    auto response = session->nvim.ExecLua(R"(
-      local cmd = ...
-      vim.v.errmsg = ''
-      vim.cmd('silent! ' .. cmd)
-      if vim.v.errmsg ~= '' then
-        error(vim.v.errmsg, 0)
-      end
-      error('session_restart cmd=' .. cmd .. ' did not quit, change it to command that quits nvim', 0)
-    )", {cmd});
+    auto response = session->nvim.Exec2(cmd, {{"output", true}});
 
-    for (int i = 0; i < 50; i++) { // 500ms max
-      if (response.wait_for(10ms) == std::future_status::ready) {
-        // Will throw if quit failed - propagates to ProcessNeogurtCmd
-        response.get();
-        break;
-      }
+    if (response.valid()) {
+      for (int i = 0; i < 50; i++) { // 500ms max
+        if (response.wait_for(10ms) == std::future_status::ready) {
+          // Will throw if quit failed - propagates to ProcessNeogurtCmd
+          response.get();
+          throw std::runtime_error(
+            "session_restart cmd=" + cmd +
+            " did not quit, change it to command that quits nvim"
+          );
+        }
 
-      if (!session->nvim.client->IsConnected()) {
-        break;
+        if (!session->nvim.client->IsConnected()) {
+          break;
+        }
       }
     }
   }

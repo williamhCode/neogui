@@ -209,16 +209,8 @@ void Client::DoRead() {
                     response.error.via.array.size >= 2 &&
                     response.error.via.array.ptr[1].type == msgpack::type::STR) {
                   auto& str = response.error.via.array.ptr[1].via.str;
-                  errMsg = std::string(str.ptr, str.size);
+                  errMsg = {str.ptr, str.size};
 
-                  // Strip "Lua: " prefix
-                  if (errMsg.starts_with("Lua: ")) {
-                    errMsg = errMsg.substr(5);
-                  }
-                  // Remove stack traceback
-                  if (auto pos = errMsg.find("\nstack traceback:"); pos != std::string::npos) {
-                    errMsg = errMsg.substr(0, pos);
-                  }
                 } else {
                   errMsg = ToString(response.error);
                 }

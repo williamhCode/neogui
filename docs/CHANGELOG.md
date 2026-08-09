@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Simplify msg window and ime window rendering logic
 - Emoji renders on top of cursor instead of using alpha mask
 - Use CoreText instead of Freetype for text rendering
+- session_restart uses nvim_exec2 instead of exec_lua (error messages now match session_vim_cmd)
+- Neogurt command errors are displayed with vim.notify and return nil instead of raising
 
 ### Fixed
 - FontFamily::UpdateLinespace not setting topLinespace

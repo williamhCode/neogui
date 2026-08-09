@@ -100,7 +100,7 @@ local cmds_table = {
   -- executes a vim command in the target session
   -- returns the command output ("" if none), or vim.NIL if the session
   -- disconnects while executing (e.g. a successful qa)
-  -- raises an error if the command fails or the id is invalid
+  -- notifies an error and returns nil if the command fails or the id is invalid
   session_vim_cmd = {
     id = 0,
     cmd = "string",
@@ -122,7 +122,7 @@ vim.api.nvim_create_user_command("Neogurt", function(cmd_opts)
   -- convert strings to correct types
   local default_opts = cmds_table[cmd]
   if default_opts == nil then
-    vim.api.nvim_err_writeln("Invalid command: " .. cmd)
+    vim.notify("Invalid command: " .. cmd, vim.log.levels.ERROR)
     return
   end
 
@@ -130,29 +130,25 @@ vim.api.nvim_create_user_command("Neogurt", function(cmd_opts)
     return
   end
 
-  -- print command output
-  local ok, result = pcall(vim.g.neogurt_cmd, cmd, opts)
-  if not ok then
-    vim.api.nvim_err_writeln(result)
-    return
-  end
-  if result ~= vim.NIL then
+  local result = vim.g.neogurt_cmd(cmd, opts)
+  if result ~= nil and result ~= vim.NIL then
     vim.print(result)
   end
 
 end, { nargs = "*" })
 
 --- Sends a session command to neogurt
+--- Command errors are displayed with vim.notify instead of being raised.
 --- @param cmd string: command to send.
 --- @param opts table|nil: command options
---- @return any: result of the command
+--- @return any: result of the command, or nil if it failed
 vim.g.neogurt_cmd = function(cmd, opts)
   local chan_id = utils.get_neogurt_channel()
   if chan_id == nil then return end
 
   local default_opts = cmds_table[cmd]
   if default_opts == nil then
-    vim.api.nvim_err_writeln("Invalid command: " .. cmd)
+    vim.notify("Invalid command: " .. cmd, vim.log.levels.ERROR)
     return
   end
   -- merge + check required options and option types
@@ -169,7 +165,7 @@ vim.g.neogurt_cmd = function(cmd, opts)
   if cmd == "session_new" then
     opts.dir = vim.fn.fnamemodify(opts.dir, ":p")
     if vim.fn.isdirectory(opts.dir) == 0 then
-      vim.api.nvim_err_writeln("Directory does not exist: " .. opts.dir)
+      vim.notify("Directory does not exist: " .. opts.dir, vim.log.levels.ERROR)
       return
     end
 
@@ -192,11 +188,19 @@ vim.g.neogurt_cmd = function(cmd, opts)
     return
   end
 
+  local ok, result
   if next(opts) == nil then
-    return vim.rpcrequest(chan_id, "neogurt_cmd", cmd)
+    ok, result = pcall(vim.rpcrequest, chan_id, "neogurt_cmd", cmd)
   else
-    return vim.rpcrequest(chan_id, "neogurt_cmd", cmd, opts)
+    ok, result = pcall(vim.rpcrequest, chan_id, "neogurt_cmd", cmd, opts)
   end
+
+  if not ok then
+    vim.notify(result, vim.log.levels.ERROR)
+    return
+  end
+
+  return result
 end
 
 vim.api.nvim_set_hl(0, "NeogurtImeNormal", { link = "Normal" })
