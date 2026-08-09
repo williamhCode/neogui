@@ -10,6 +10,7 @@
 #include <format>
 #include <stdexcept>
 #include <ranges>
+#include <thread>
 #include <utility>
 #include <vector>
 #include "glm/gtx/string_cast.hpp"
@@ -364,6 +365,51 @@ std::vector<SessionListEntry> SessionManager::SessionList(const SessionListOpts&
   }
 
   return entries;
+}
+
+void SessionManager::SessionVimCmd(int id, const std::string& cmd, rpc::Request& request) {
+  auto it = sessions.find(id);
+  if (it == sessions.end() || !it->second->nvim.IsConnected()) {
+    throw std::runtime_error("No connected session with id " + std::to_string(id));
+  }
+  auto& session = it->second;
+
+  auto response = session->nvim.Exec2(cmd, {{"output", true}});
+  if (!response.valid()) {
+    // client disconnected between the check above and the call
+    throw std::runtime_error("No connected session with id " + std::to_string(id));
+  }
+
+  std::thread([client = session->nvim.client, response = std::move(response),
+               promise = std::move(request.promise)] mutable {
+    using namespace std::chrono_literals;
+    using msgpack::type::nil_t;
+
+    while (true) {
+      if (response.wait_for(10ms) == std::future_status::ready) {
+        try {
+          msgpack::object_handle result = response.get();
+          auto map = result.get().as<std::map<std::string_view, msgpack::object>>();
+
+          auto outputIt = map.find("output");
+          if (outputIt == map.end()) {
+            rpc::SetPromiseResult(promise, nil_t());
+          } else {
+            rpc::SetPromiseResult(promise, outputIt->second.as<std::string>());
+          }
+
+        } catch (const std::exception& e) {
+          rpc::SetPromiseError(promise, std::string(e.what()));
+        }
+        return;
+      }
+
+      if (!client->IsConnected()) {
+        rpc::SetPromiseResult(promise, nil_t());
+        return;
+      }
+    }
+  }).detach();
 }
 
 SessionHandle* SessionManager::GetCurrentSession() {

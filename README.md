@@ -162,6 +162,16 @@ local cmds_table = {
     sort = "id",
     reverse = false,
   },
+  -- executes a vim command in the target session (like vim.cmd)
+  -- output is captured, so commands like "messages" won't block the target
+  -- returns the command output ("" if none), or vim.NIL if the target
+  -- disconnects while executing (e.g. a successful "qa")
+  -- raises an error if the command fails (e.g. "qa" with modified buffers)
+  -- or if the id doesn't refer to a connected session
+  session_vim_cmd = {
+    id = 0,
+    cmd = "string",
+  },
 
   font_size_change = {
     [1] = "number",

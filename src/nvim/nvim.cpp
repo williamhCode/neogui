@@ -140,6 +140,10 @@ Nvim::Response Nvim::Command(std::string_view command) {
   return client->Call("nvim_command", command);
 }
 
+Nvim::Response Nvim::Exec2(std::string_view src, MapRef opts) {
+  return client->Call("nvim_exec2", src, opts);
+}
+
 Nvim::Response Nvim::GetHl(int nsId, MapRef opts) {
   return client->Call("nvim_get_hl", nsId, opts);
 }

@@ -69,6 +69,9 @@ void ProcessNeogurtCmd(
       });
       request.SetResult(list);
 
+    } else if (cmd == "session_vim_cmd") {
+      sessionManager.SessionVimCmd(convId(), conv("cmd"), request);
+
     } else if (cmd == "font_size_change") {
       sessionManager.FontSizeChange(conv("arg1"), conv("all"));
       request.SetResult(nil_t());

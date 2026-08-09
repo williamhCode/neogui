@@ -84,6 +84,7 @@ public:
   bool SessionPrev();                               // returns success
   SessionListEntry SessionInfo(int id);             // returns {} if failed
   std::vector<SessionListEntry> SessionList(const SessionListOpts& opts = {});
+  void SessionVimCmd(int id, const std::string& cmd, rpc::Request& request); // sets cmd output (nil if target disconnected while executing)
   SessionHandle* GetCurrentSession(); // returns nullptr if should quit
 
   void FontSizeChange(float delta, bool all = false);

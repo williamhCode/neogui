@@ -97,6 +97,14 @@ local cmds_table = {
     sort = "id",
     reverse = false,
   },
+  -- executes a vim command in the target session
+  -- returns the command output ("" if none), or vim.NIL if the session
+  -- disconnects while executing (e.g. a successful qa)
+  -- raises an error if the command fails or the id is invalid
+  session_vim_cmd = {
+    id = 0,
+    cmd = "string",
+  },
 
   font_size_change = {
     [1] = "number",
